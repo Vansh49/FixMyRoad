@@ -66,3 +66,4 @@ Protected requests use `Authorization: Bearer <token>`. Report list supports opt
 5. Sign back in as the citizen to verify the status update.
 
 Uploaded photos and the in-memory report records are intended for local evaluation only. Photo files are not automatically removed when the in-memory store resets; use a dedicated object-storage service when deploying and PostgreSQL for persistent report metadata.
+A full-stack road maintenance and pothole reporting platform that enables citizens to report road damage and helps government authorities manage complaints, track repairs, and monitor road conditions through a centralized dashboard.
