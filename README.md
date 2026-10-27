@@ -1,6 +1,6 @@
 # FixMyRoad
 
-A  civic road reporting app. Citizens can report potholes and track repair updates; officers can review reports, update their status, and see a small operations dashboard.
+A civic road reporting app. Citizens can report potholes and track repair updates; officers can review reports, update their status, and see a small operations dashboard.
 
 ## Stack
 
@@ -26,8 +26,8 @@ For a production-style frontend build, run `npm run build`. Run API tests with `
 
 ## Demo accounts
 
-| Role | Email | Password |
-| --- | --- | --- |
+| Role    | Email                 | Password      |
+| ------- | --------------------- | ------------- |
 | Citizen | `citizen@civic.local` | `Citizen123!` |
 | Officer | `officer@civic.local` | `Officer123!` |
 
@@ -38,22 +38,36 @@ These accounts and their sample reports are local demo data. Registering an acco
 - Citizens can register or sign in, view their reports, submit a report with a description, address, map-selected coordinates, optional photo, and severity, and view status history.
 - Officers can review all reports, search and filter the queue, see aggregate counts, and move reports through `submitted` → `in_progress` → `resolved`.
 - The API enforces authenticated access, citizen ownership, and officer-only status changes. Registration always creates a citizen account.
-- The report form uses Leaflet with OpenStreetMap tiles. Click the map or drag the pin; browser geolocation is an optional shortcut. Enter the nearby address separately so the readable address and exact coordinates are both saved.
+- The report form uses Leaflet with OpenStreetMap tiles and the Chandigarh administrative boundary from OpenStreetMap relation 1942809. The boundary is shared by the client and server; out-of-boundary map clicks and pin drags are rejected, and the API independently validates report coordinates.
+- Citizens select locations only on the map. A read-only address is filled using the server-side reverse-geocoding endpoint and saved with the selected coordinates; client-provided address text is never trusted.
+- Reverse geocoding uses Nominatim by default (`GEOCODER_BASE_URL` can select another compatible endpoint), identifies the app with a custom User-Agent, and caches results and serializes requests at least 1.1 seconds apart to comply with Nominatim's public service policy. OpenStreetMap contributors are credited on the map and in the boundary GeoJSON. The boundary data is available under ODbL 1.0.
 - Report photos support JPEG, PNG, and WebP up to 5 MB. Files are checked, stored locally, and served from `/uploads`; generated filenames are used instead of client-provided paths.
+
+## Frontend structure
+
+- `client/src/App.jsx` defines routes, role-based page selection, and global toast state.
+- `client/src/components/AppLayout.jsx` contains the authenticated application shell and navigation.
+- `client/src/components/ReportUi.jsx` provides reusable report cards, status badges, and loading/error/empty states.
+- `client/src/pages/` contains the authentication, dashboard, report-list, report-form, and report-detail screens.
+- `client/src/hooks/useReports.js` loads the signed-in user's report collection.
+- `client/src/utils/reports.js` contains shared report labels and date formatting.
+- Public visitors land on a home page with a login link; the Contact Us page lists the project email and phone number.
 
 ## API overview
 
-| Method | Endpoint | Access |
-| --- | --- | --- |
-| `GET` | `/api/health` | Public |
-| `POST` | `/api/auth/register` | Public |
-| `POST` | `/api/auth/login` | Public |
-| `GET` | `/api/auth/me` | Signed in |
-| `GET` | `/api/reports` | Signed in; citizens see their reports, officers see all |
-| `POST` | `/api/reports` | Citizen |
-| `GET` | `/api/reports/:id` | Owner or officer |
-| `PATCH` | `/api/reports/:id/status` | Officer |
-| `GET` | `/api/dashboard` | Officer |
+| Method  | Endpoint                                           | Access                                                  |
+| ------- | -------------------------------------------------- | ------------------------------------------------------- |
+| `GET`   | `/api/health`                                      | Public                                                  |
+| `GET`   | `/api/location/boundary`                           | Public                                                  |
+| `GET`   | `/api/location/reverse?latitude=...&longitude=...` | Citizen                                                 |
+| `POST`  | `/api/auth/register`                               | Public                                                  |
+| `POST`  | `/api/auth/login`                                  | Public                                                  |
+| `GET`   | `/api/auth/me`                                     | Signed in                                               |
+| `GET`   | `/api/reports`                                     | Signed in; citizens see their reports, officers see all |
+| `POST`  | `/api/reports`                                     | Citizen                                                 |
+| `GET`   | `/api/reports/:id`                                 | Owner or officer                                        |
+| `PATCH` | `/api/reports/:id/status`                          | Officer                                                 |
+| `GET`   | `/api/dashboard`                                   | Officer                                                 |
 
 Protected requests use `Authorization: Bearer <token>`. Report list supports optional `status` and `q` query parameters. Submit reports as `multipart/form-data` with the report fields and an optional `photo` file.
 
