@@ -1,7 +1,7 @@
 import bcrypt from "bcryptjs";
 import { randomUUID } from "node:crypto";
 
-const demoUsers = [
+export const demoUsers = [
   {
     id: "demo-citizen",
     name: "Aarav Sharma",
@@ -18,7 +18,7 @@ const demoUsers = [
   },
 ];
 
-const demoReports = [
+export const demoReports = [
   {
     id: "report-1001",
     title: "Deep pothole near the school crossing",

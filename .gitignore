@@ -1,6 +1,7 @@
 node_modules/
 client/dist/
 .env
+server/.env
 coverage/
 server/uploads/*
 !server/uploads/.gitkeep

@@ -6,21 +6,28 @@ A civic road reporting app. Citizens can report potholes and track repair update
 
 - React, Vite, React Router
 - Node.js and Express
-- In-memory repositories for evaluation data (no database required yet)
+- PostgreSQL persistence for users, reports, and report status history
 - bcrypt password hashing and signed JWT authentication
 
-The repository interface is isolated in `server/src/data/store.js`. When PostgreSQL is introduced, replace this implementation with a PostgreSQL-backed repository and keep the HTTP API and React client stable. The report data shape is already relational-friendly: users own reports, and each report has timestamped status-history entries. Uploaded photos are saved as local files under `server/uploads`; the report record stores only the image URL.
+The API uses the PostgreSQL repository in `server/src/data/postgresStore.js`; the in-memory repository in `server/src/data/store.js` is retained for isolated API tests. Database schema migrations are in `server/src/data/migrations/`; the API applies pending migrations at startup and inserts the demo accounts and reports only when they do not already exist. Uploaded photos are saved as local files under `server/uploads`; the report record stores only the image URL.
 
 ## Run locally
 
-Requirements: Node.js 20 or newer and npm.
+Requirements: Node.js 20 or newer, npm, and PostgreSQL 13 or newer.
 
 ```sh
 npm install
 npm run dev
 ```
 
-The Vite client runs at <http://localhost:5173> and proxies `/api` requests to the Express API at <http://localhost:4000>. To configure the API, copy `.env.example` to `.env` and set a random `JWT_SECRET` with at least 24 characters. For local development only, the server has a development fallback secret; production startup requires an explicitly configured secret.
+Create a PostgreSQL database and user (for example, database `fixmyroad` and user `fixmyroad`) using `psql` or your PostgreSQL administration tool:
+
+```sql
+CREATE USER fixmyroad WITH PASSWORD 'choose-a-local-password';
+CREATE DATABASE fixmyroad OWNER fixmyroad;
+```
+
+Copy `.env.example` to `server/.env` and set `DATABASE_URL` to the connection string for that database, including the password you chose. The API also supports a root `.env` as a fallback. Set a random `JWT_SECRET` with at least 24 characters. The API checks the connection, applies pending schema migrations, and seeds the demo data on startup. If PostgreSQL is unavailable or the connection string is missing, the API reports the configuration/connection error and does not fall back to volatile storage. The Vite client runs at <http://localhost:5173> and proxies `/api` requests to the Express API at <http://localhost:4000>.
 
 For a production-style frontend build, run `npm run build`. Run API tests with `npm test`.
 
@@ -31,7 +38,7 @@ For a production-style frontend build, run `npm run build`. Run API tests with `
 | Citizen | `citizen@civic.local` | `Citizen123!` |
 | Officer | `officer@civic.local` | `Officer123!` |
 
-These accounts and their sample reports are local demo data. Registering an account or changing reports updates the in-memory store only; restarting the API restores the original demo data.
+These accounts and their sample reports are seeded into PostgreSQL once. New registrations, reports, and status updates persist across API restarts.
 
 ## Included workflow
 
